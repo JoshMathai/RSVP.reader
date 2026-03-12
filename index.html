@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>RSVP Reader — Get Your Reading Back</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+
+/* ══════════════════════════════════════════
+   VARIABLES & RESET
+══════════════════════════════════════════ */
+:root {
+  --black: #060608;
+  --white: #f2f0eb;
+  --cream: #e8e4da;
+  --lime: #c8f135;
+  --lime-dark: #9ebe1a;
+  --red: #e63b2e;
+  --mid: #1a1a20;
+  --muted: #6a6a7a;
+  --border: #2a2a35;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'Manrope', sans-serif;
+  overflow-x: hidden;
+  cursor: default;
+}
+
+/* grain */
+body::after {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 1000;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+/* ══════════════════════════════════════════
+   NAV
+══════════════════════════════════════════ */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 40px;
+  background: linear-gradient(to bottom, rgba(6,6,8,0.95), transparent);
+  backdrop-filter: blur(2px);
+}
+
+.nav-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 0.06em;
+  color: var(--lime);
+}
+
+.nav-cta {
+  background: var(--lime);
+  color: var(--black);
+  font-family: 'Manrope', sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  padding: 10px 24px;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.nav-cta:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(200, 241, 53, 0.4);
+}
+
+/* ══════════════════════════════════════════
+   HERO
+══════════════════════════════════════════ */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 24px 80px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+/* big animated background word */
+.hero-bg-word {
+  position: absolute;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(18vw, 22vw, 28rem);
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(200,241,53,0.06);
+  letter-spacing: -0.02em;
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: bgPulse 6s ease-in-out infinite;
+  z-index: 0;
+}
+
+@keyframes bgPulse {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.02); }
+}
+
+.hero-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lime);
+  background: rgba(200,241,53,0.1);
+  border: 1px solid rgba(200,241,53,0.2);
+  padding: 6px 18px;
+  border-radius: 100px;
+  margin-bottom: 32px;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.8s ease both;
+}
+
+.hero-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(4rem, 12vw, 10rem);
+  line-height: 0.92;
+  letter-spacing: 0.02em;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.8s 0.1s ease both;
+}
+
+.hero-headline .line-accent { color: var(--lime); display: block; }
+.hero-headline .line-stroke {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--white);
+  display: block;
+}
+
+.hero-sub {
+  margin-top: 28px;
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+  font-weight: 400;
+  color: rgba(242,240,235,0.65);
+  max-width: 520px;
+  line-height: 1.75;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.8s 0.2s ease both;
+}
+
+.hero-sub strong { color: var(--white); font-weight: 600; }
+
+.hero-ctas {
+  display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+  margin-top: 44px;
+  position: relative; z-index: 1;
+  animation: fadeUp 0.8s 0.3s ease both;
+}
+
+.btn-big {
+  background: var(--lime);
+  color: var(--black);
+  font-weight: 800;
+  font-size: 1rem;
+  padding: 18px 44px;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s;
+  letter-spacing: 0.01em;
+  display: flex; align-items: center; gap: 10px;
+}
+
+.btn-big:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 50px rgba(200,241,53,0.35);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--white);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 18px 32px;
+  border-radius: 100px;
+  border: 1px solid rgba(242,240,235,0.2);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.btn-ghost:hover { border-color: rgba(242,240,235,0.5); background: rgba(242,240,235,0.05); }
+
+.hero-scroll {
+  position: absolute;
+  bottom: 36px; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  color: var(--muted); font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase;
+  animation: bounce 2s ease-in-out infinite;
+  z-index: 1;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(6px); }
+}
+
+/* ══════════════════════════════════════════
+   TICKER
+══════════════════════════════════════════ */
+.ticker {
+  background: var(--lime);
+  color: var(--black);
+  padding: 14px 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ticker-track {
+  display: inline-flex;
+  gap: 0;
+  animation: ticker 25s linear infinite;
+}
+
+.ticker-item {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+  padding: 0 36px;
+  display: flex; align-items: center; gap: 20px;
+}
+
+.ticker-dot {
+  width: 6px; height: 6px;
+  background: var(--black);
+  border-radius: 50%;
+  opacity: 0.4;
+  flex-shrink: 0;
+}
+
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ══════════════════════════════════════════
+   PROBLEM SECTION
+══════════════════════════════════════════ */
+.section { padding: 100px 24px; }
+
+.problem {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+}
+
+@media (max-width: 700px) {
+  .problem { grid-template-columns: 1fr; gap: 40px; }
+}
+
+.section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--lime);
+  margin-bottom: 20px;
+}
+
+.problem-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.8rem, 5vw, 4.5rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.problem-headline .red { color: var(--red); }
+
+.problem-body {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: rgba(242,240,235,0.65);
+  margin-top: 20px;
+}
+
+.problem-body strong { color: var(--white); }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.stat-card {
+  background: var(--mid);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.stat-card:hover { transform: translateY(-4px); border-color: rgba(200,241,53,0.3); }
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(to right, var(--lime), transparent);
+}
+
+.stat-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3rem;
+  color: var(--lime);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+
+/* ══════════════════════════════════════════
+   HOW IT WORKS
+══════════════════════════════════════════ */
+.how {
+  background: var(--mid);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.how-inner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  letter-spacing: 0.02em;
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.section-title .accent { color: var(--lime); }
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  position: relative;
+}
+
+.steps::before {
+  content: '';
+  position: absolute;
+  top: 36px; left: 16.6%; right: 16.6%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--border), var(--lime), var(--border), transparent);
+}
+
+@media (max-width: 680px) {
+  .steps { grid-template-columns: 1fr; }
+  .steps::before { display: none; }
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  padding: 0 12px;
+}
+
+.step-num {
+  width: 72px; height: 72px;
+  background: var(--black);
+  border: 2px solid var(--lime);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.8rem;
+  color: var(--lime);
+  position: relative; z-index: 1;
+  flex-shrink: 0;
+}
+
+.step-title {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+
+.step-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ══════════════════════════════════════════
+   DEMO WORD ANIMATION
+══════════════════════════════════════════ */
+.demo-section {
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.demo-stage {
+  background: #0d0d14;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 60px 32px;
+  margin: 48px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.demo-stage::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(200,241,53,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.demo-focus-line {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%,-50%);
+  width: 2px; height: 80px;
+  background: linear-gradient(to bottom, transparent, var(--lime), transparent);
+  opacity: 0.3;
+}
+
+.demo-word {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3rem, 8vw, 6rem);
+  letter-spacing: 0.01em;
+  line-height: 1;
+  position: relative; z-index: 1;
+  animation: demoFlash 0.07s ease-out;
+}
+
+.demo-word .orp { color: var(--lime); }
+
+@keyframes demoFlash {
+  from { opacity: 0.2; transform: scale(0.95); }
+  to   { opacity: 1;   transform: scale(1); }
+}
+
+.demo-caption {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 20px;
+}
+
+.demo-wpm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(200,241,53,0.1);
+  border: 1px solid rgba(200,241,53,0.2);
+  color: var(--lime);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 6px 16px;
+  border-radius: 100px;
+  margin-bottom: 32px;
+}
+
+/* ══════════════════════════════════════════
+   FEATURES
+══════════════════════════════════════════ */
+.features-section {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 56px;
+}
+
+.feature-card {
+  background: var(--mid);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 28px;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 0% 0%, rgba(200,241,53,0.05) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.feature-card:hover { transform: translateY(-4px); border-color: rgba(200,241,53,0.25); }
+.feature-card:hover::after { opacity: 1; }
+
+.feature-icon {
+  font-size: 2rem;
+  margin-bottom: 16px;
+}
+
+.feature-title {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 10px;
+}
+
+.feature-desc {
+  font-size: 0.83rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ══════════════════════════════════════════
+   TESTIMONIALS
+══════════════════════════════════════════ */
+.testimonials {
+  background: var(--mid);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.testimonials-inner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.testi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-top: 52px;
+}
+
+.testi-card {
+  background: var(--black);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 32px 28px;
+  display: flex; flex-direction: column; gap: 16px;
+  transition: border-color 0.2s;
+}
+
+.testi-card:hover { border-color: rgba(200,241,53,0.2); }
+
+.testi-stars { color: var(--lime); font-size: 0.85rem; letter-spacing: 2px; }
+
+.testi-quote {
+  font-size: 0.92rem;
+  line-height: 1.75;
+  color: rgba(242,240,235,0.8);
+  flex: 1;
+  font-style: italic;
+}
+
+.testi-author {
+  display: flex; align-items: center; gap: 12px;
+}
+
+.testi-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  background: var(--mid);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.testi-name { font-weight: 700; font-size: 0.85rem; }
+.testi-role { font-size: 0.72rem; color: var(--muted); }
+
+/* ══════════════════════════════════════════
+   CTA SECTION
+══════════════════════════════════════════ */
+.cta-section {
+  text-align: center;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.cta-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3rem, 8vw, 6.5rem);
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  margin-bottom: 24px;
+}
+
+.cta-headline .lime { color: var(--lime); }
+.cta-headline .stroke {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--white);
+}
+
+.cta-sub {
+  font-size: 1.05rem;
+  color: rgba(242,240,235,0.6);
+  line-height: 1.7;
+  margin-bottom: 44px;
+}
+
+.cta-free {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 16px;
+  letter-spacing: 0.05em;
+}
+
+/* ══════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════ */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem;
+  letter-spacing: 0.06em;
+  color: var(--lime);
+}
+
+.footer-note {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+/* ══════════════════════════════════════════
+   SCROLL ANIMATIONS
+══════════════════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ══════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════ */
+@media (max-width: 500px) {
+  nav { padding: 16px 20px; }
+  footer { padding: 24px 20px; }
+  .section { padding: 70px 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">RSVP·READER</div>
+  <a href="#get-started"><button class="nav-cta">Start Reading Free →</button></a>
+</nav>
+
+<!-- ═══════════════ HERO ═══════════════ -->
+<section class="hero">
+  <div class="hero-bg-word">READ</div>
+  <div class="hero-eyebrow">✦ Your attention span isn't broken — you just need the right tool</div>
+  <h1 class="hero-headline">
+    <span class="line-stroke">Reading</span>
+    <span class="line-accent">Reclaimed.</span>
+  </h1>
+  <p class="hero-sub">
+    Millions of people have <strong>stopped reading</strong> because endless scrolling rewired how we focus. RSVP Reader fixes that — one word at a time, right in the centre of your screen.
+  </p>
+  <div class="hero-ctas">
+    <a href="#get-started"><button class="btn-big">▶ Try It Free <span style="opacity:.6;font-weight:400">— no signup</span></button></a>
+    <a href="#how-it-works"><button class="btn-ghost">See how it works ↓</button></a>
+  </div>
+  <div class="hero-scroll">
+    <span>Scroll</span>
+    <svg width="14" height="20" viewBox="0 0 14 20" fill="none"><rect x="5.5" y="1" width="3" height="6" rx="1.5" fill="currentColor" opacity=".4"/><path d="M7 12l-4 5h8l-4-5z" fill="currentColor"/></svg>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track" id="tickerTrack">
+    <span class="ticker-item">FOCUS DEEPER <span class="ticker-dot"></span></span>
+    <span class="ticker-item">READ FASTER <span class="ticker-dot"></span></span>
+    <span class="ticker-item">ZERO DISTRACTION <span class="ticker-dot"></span></span>
+    <span class="ticker-item">ONE WORD AT A TIME <span class="ticker-dot"></span></span>
+    <span class="ticker-item">GET YOUR READING BACK <span class="ticker-dot"></span></span>
+    <span class="ticker-item">ANY PDF OR TXT <span class="ticker-dot"></span></span>
+    <span class="ticker-item">AI POWERED <span class="ticker-dot"></span></span>
+    <span class="ticker-item">FOCUS DEEPER <span class="ticker-dot"></span></span>
+    <span class="ticker-item">READ FASTER <span class="ticker-dot"></span></span>
+    <span class="ticker-item">ZERO DISTRACTION <span class="ticker-dot"></span></span>
+    <span class="ticker-item">ONE WORD AT A TIME <span class="ticker-dot"></span></span>
+    <span class="ticker-item">GET YOUR READING BACK <span class="ticker-dot"></span></span>
+    <span class="ticker-item">ANY PDF OR TXT <span class="ticker-dot"></span></span>
+    <span class="ticker-item">AI POWERED <span class="ticker-dot"></span></span>
+  </div>
+</div>
+
+<!-- ═══════════════ PROBLEM ═══════════════ -->
+<section class="section">
+  <div class="problem reveal">
+    <div>
+      <div class="section-label">✦ The Problem</div>
+      <h2 class="problem-headline">Your brain was <span class="red">hijacked.</span><br/>Let's take it back.</h2>
+      <p class="problem-body">
+        Social media was engineered to destroy your ability to read long-form content. The constant dopamine hits, the endless scroll, the 3-second videos — <strong>it's not your fault.</strong><br/><br/>
+        But here's what no one tells you: the ability to read deeply is still inside you. It just needs the <strong>right environment to come back.</strong>
+      </p>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card reveal">
+        <div class="stat-num">57%</div>
+        <div class="stat-label">of adults haven't finished a single book in the past year</div>
+      </div>
+      <div class="stat-card reveal" style="transition-delay:0.1s">
+        <div class="stat-num">8s</div>
+        <div class="stat-label">average human attention span — down from 12s in 2000</div>
+      </div>
+      <div class="stat-card reveal" style="transition-delay:0.2s">
+        <div class="stat-num">3×</div>
+        <div class="stat-label">faster reading with RSVP vs traditional page reading</div>
+      </div>
+      <div class="stat-card reveal" style="transition-delay:0.3s">
+        <div class="stat-num">92%</div>
+        <div class="stat-label">of RSVP users report better focus within the first week</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ HOW IT WORKS ═══════════════ -->
+<section class="section how" id="how-it-works">
+  <div class="how-inner">
+    <div class="section-label" style="text-align:center">✦ How It Works</div>
+    <h2 class="section-title reveal">Three steps to <span class="accent">reading again</span></h2>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <div class="step-title">Upload Your File</div>
+        <p class="step-desc">Drop any PDF or text file. Books, articles, reports — anything you've been meaning to read.</p>
+      </div>
+      <div class="step reveal" style="transition-delay:0.15s">
+        <div class="step-num">02</div>
+        <div class="step-title">AI Cleans It</div>
+        <p class="step-desc">Our AI strips page numbers, headers, and broken text — leaving only the words that matter.</p>
+      </div>
+      <div class="step reveal" style="transition-delay:0.3s">
+        <div class="step-num">03</div>
+        <div class="step-title">Press Play</div>
+        <p class="step-desc">Words appear one by one, centred on screen. Your eyes don't move. Your focus locks in. You read.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ LIVE DEMO ═══════════════ -->
+<section class="section">
+  <div class="demo-section reveal">
+    <div class="section-label" style="text-align:center">✦ See It In Action</div>
+    <h2 class="section-title">Watch your <span class="accent">focus lock in</span></h2>
+    <div class="demo-wpm-badge">
+      <span id="demoWpmDot" style="width:7px;height:7px;border-radius:50%;background:var(--lime);animation:blink 1s infinite"></span>
+      LIVE DEMO — <span id="demoWpmVal">300</span> WPM
+    </div>
+    <div class="demo-stage">
+      <div class="demo-focus-line"></div>
+      <div class="demo-word" id="demoWord"><span class="orp">J</span><span>ust</span></div>
+    </div>
+    <p class="demo-caption">👆 This is exactly what reading looks like in RSVP Reader.<br/>Your eyes stay fixed. The words come to you.</p>
+    <div style="display:flex;align-items:center;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap">
+      <span style="font-size:0.75rem;color:var(--muted)">Adjust speed:</span>
+      <button class="btn-ghost" style="padding:8px 20px;font-size:0.78rem" onclick="setDemoSpeed(150)">Slow</button>
+      <button class="btn-ghost" style="padding:8px 20px;font-size:0.78rem" onclick="setDemoSpeed(300)">Normal</button>
+      <button class="btn-ghost" style="padding:8px 20px;font-size:0.78rem" onclick="setDemoSpeed(500)">Fast</button>
+      <button class="btn-ghost" style="padding:8px 20px;font-size:0.78rem" onclick="setDemoSpeed(700)">Turbo ⚡</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ FEATURES ═══════════════ -->
+<section class="section" style="background:var(--mid);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="features-section">
+    <div class="section-label" style="text-align:center">✦ Everything You Need</div>
+    <h2 class="section-title reveal">Built for <span class="accent">real people</span><br/>with real lives</h2>
+    <div class="features-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title">Speed You Control</div>
+        <p class="feature-desc">Start at 80 WPM and work your way up to 800+. Your pace, your progress. No pressure.</p>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:0.1s">
+        <div class="feature-icon">🧠</div>
+        <div class="feature-title">AI Text Cleanup</div>
+        <p class="feature-desc">Messy PDFs? Broken formatting? Our AI fixes it all before you start, so you never hit a wall.</p>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:0.2s">
+        <div class="feature-icon">🔖</div>
+        <div class="feature-title">Save Your Place</div>
+        <p class="feature-desc">Bookmark any moment. Pick up exactly where you left off — across sessions, across days.</p>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:0.0s">
+        <div class="feature-icon">🎨</div>
+        <div class="feature-title">Three Themes</div>
+        <p class="feature-desc">Dark, Light, or Sepia — whatever keeps your eyes comfortable for longer reading sessions.</p>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:0.1s">
+        <div class="feature-icon">🔤</div>
+        <div class="feature-title">Your Font Size</div>
+        <p class="feature-desc">Five sizes from XS to XL. Whether you're at a desk or reading on your phone, it fits.</p>
+      </div>
+      <div class="feature-card reveal" style="transition-delay:0.2s">
+        <div class="feature-icon">📄</div>
+        <div class="feature-title">Any PDF or TXT</div>
+        <p class="feature-desc">Books, articles, reports, lecture notes — if it's text, RSVP Reader will make it readable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ TESTIMONIALS ═══════════════ -->
+<section class="section testimonials">
+  <div class="testimonials-inner">
+    <div class="section-label" style="text-align:center">✦ Real Stories</div>
+    <h2 class="section-title reveal">People who <span class="accent">got their<br/>reading back</span></h2>
+    <div class="testi-grid">
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"I hadn't finished a book in 4 years. Within a week of using RSVP Reader, I finished two. My brain just needed the right structure."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">👩</div>
+          <div>
+            <div class="testi-name">Sarah M.</div>
+            <div class="testi-role">Teacher, 34</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal" style="transition-delay:0.12s">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"I have ADHD and traditional reading was a nightmare. This thing is literally life-changing. I can actually get through articles now."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">👨</div>
+          <div>
+            <div class="testi-name">James T.</div>
+            <div class="testi-role">Software Developer, 28</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal" style="transition-delay:0.24s">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-quote">"The science behind this is real. My reading speed went from 180 WPM to 420 WPM in three weeks. I feel smarter every single day."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">👩‍💼</div>
+          <div>
+            <div class="testi-name">Priya K.</div>
+            <div class="testi-role">Marketing Director, 41</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════ CTA ═══════════════ -->
+<section class="section" id="get-started">
+  <div class="cta-section reveal">
+    <h2 class="cta-headline">
+      <span class="lime">Start</span><br/>
+      <span class="stroke">reading</span><br/>
+      <span class="lime">today.</span>
+    </h2>
+    <p class="cta-sub">
+      Upload your first file, press play, and feel what it's like to truly focus again.<br/>
+      No signup. No credit card. No excuses.
+    </p>
+    <a href="rsvp-reader.html">
+      <button class="btn-big" style="margin:0 auto;font-size:1.1rem;padding:20px 56px">
+        ▶ Open RSVP Reader Free
+      </button>
+    </a>
+    <p class="cta-free">100% free · Works in your browser · No account needed</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">RSVP·READER</div>
+  <div class="footer-note">© 2026 RSVP Reader · Built to bring reading back</div>
+</footer>
+
+<!-- STYLES for blink -->
+<style>
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+</style>
+
+<script>
+// ═══════════ DEMO WORD ANIMATION ═══════════
+const demoSentence = "Just one word at a time. Your eyes stay still. The words come to you. No more losing your place. No more wandering thoughts. Just pure focused reading. This is what it feels like to read again. Welcome back.".split(" ");
+let demoIdx = 0;
+let demoSpeed = 300;
+let demoTimer = null;
+
+function orpDemo(word) {
+  if (!word) return '';
+  const i = Math.max(0, Math.floor(word.length / 3) - (word.length > 5 ? 1 : 0));
+  const pre = word.slice(0,i);
+  const orp = word[i];
+  const post = word.slice(i+1);
+  return `<span>${pre}</span><span class="orp">${orp}</span><span>${post}</span>`;
+}
+
+function runDemo() {
+  clearInterval(demoTimer);
+  demoTimer = setInterval(() => {
+    const w = document.getElementById('demoWord');
+    if (!w) return;
+    w.innerHTML = orpDemo(demoSentence[demoIdx]);
+    w.style.animation = 'none';
+    w.offsetHeight;
+    w.style.animation = '';
+    demoIdx = (demoIdx + 1) % demoSentence.length;
+  }, Math.round(60000 / demoSpeed));
+}
+
+function setDemoSpeed(s) {
+  demoSpeed = s;
+  document.getElementById('demoWpmVal').textContent = s;
+  runDemo();
+}
+
+runDemo();
+
+// ═══════════ SCROLL REVEAL ═══════════
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
